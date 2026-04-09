@@ -1,0 +1,1554 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FinAdvisor AI — Multi-Agent Financial Planning Platform</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=Sora:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  :root {
+    --bg: #0d0f14;
+    --bg2: #13161e;
+    --bg3: #1a1e28;
+    --bg4: #20253200;
+    --border: rgba(255,255,255,0.07);
+    --border2: rgba(255,255,255,0.12);
+    --text: #e8eaf0;
+    --text2: #8892a4;
+    --text3: #545f72;
+    --accent: #4f8ef7;
+    --accent2: #7c5af7;
+    --green: #3ecf8e;
+    --amber: #f7a94f;
+    --red: #f75a5a;
+    --teal: #3ecfcf;
+    --pink: #f75ab0;
+    --card-radius: 16px;
+    --radius: 10px;
+    --font-display: 'DM Serif Display', Georgia, serif;
+    --font-body: 'Sora', sans-serif;
+    --font-mono: 'DM Mono', monospace;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--font-body);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── BACKGROUND ── */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 80% 50% at 20% 10%, rgba(79,142,247,0.07) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 40% at 80% 80%, rgba(124,90,247,0.06) 0%, transparent 55%),
+      radial-gradient(ellipse 40% 30% at 60% 40%, rgba(62,207,142,0.04) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ── LAYOUT ── */
+  .shell { position: relative; z-index: 1; display: flex; flex-direction: column; min-height: 100vh; }
+
+  /* ── TOPBAR ── */
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 28px;
+    border-bottom: 1px solid var(--border);
+    background: rgba(13,15,20,0.85);
+    backdrop-filter: blur(12px);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .topbar-brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .brand-icon {
+    width: 36px; height: 36px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+  }
+
+  .brand-name {
+    font-family: var(--font-display);
+    font-size: 20px;
+    color: var(--text);
+    letter-spacing: -0.02em;
+  }
+
+  .brand-tag {
+    font-size: 10px;
+    background: rgba(79,142,247,0.15);
+    color: var(--accent);
+    border: 1px solid rgba(79,142,247,0.25);
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-family: var(--font-mono);
+    letter-spacing: .04em;
+  }
+
+  .tabs {
+    display: flex;
+    gap: 2px;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 4px;
+  }
+
+  .tab {
+    padding: 7px 18px;
+    border-radius: 9px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 400;
+    color: var(--text2);
+    font-family: var(--font-body);
+    transition: all .2s;
+    letter-spacing: .01em;
+  }
+
+  .tab:hover { color: var(--text); background: rgba(255,255,255,0.04); }
+
+  .tab.active {
+    background: var(--bg3);
+    color: var(--text);
+    font-weight: 500;
+    border: 1px solid var(--border2);
+  }
+
+  /* ── MAIN ── */
+  .main { display: flex; flex: 1; }
+
+  /* ── SIDEBAR ── */
+  .sidebar {
+    width: 280px;
+    flex-shrink: 0;
+    border-right: 1px solid var(--border);
+    padding: 20px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    background: rgba(13,15,20,0.4);
+    overflow-y: auto;
+  }
+
+  .sidebar-section {}
+
+  .section-label {
+    font-size: 10px;
+    font-family: var(--font-mono);
+    color: var(--text3);
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+
+  /* ── PROFILE CARD ── */
+  .profile-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--card-radius);
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .profile-header { display: flex; align-items: center; gap: 12px; }
+
+  .avatar {
+    width: 42px; height: 42px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #4f8ef7, #7c5af7);
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 600; font-size: 14px; color: #fff;
+    font-family: var(--font-mono);
+    flex-shrink: 0;
+  }
+
+  .profile-name { font-size: 14px; font-weight: 500; }
+  .profile-sub { font-size: 11px; color: var(--text2); margin-top: 2px; }
+
+  .profile-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4px 8px;
+    font-size: 12px;
+    border-top: 1px solid var(--border);
+    padding-top: 10px;
+  }
+
+  .profile-stats .label { color: var(--text2); }
+  .profile-stats .value { text-align: right; font-weight: 500; font-family: var(--font-mono); font-size: 11px; }
+
+  /* ── RISK CONTROL ── */
+  .risk-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--card-radius);
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .risk-header { display: flex; justify-content: space-between; align-items: center; }
+
+  .risk-badge {
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-family: var(--font-mono);
+    font-weight: 500;
+  }
+
+  .risk-score { font-size: 12px; color: var(--text2); font-family: var(--font-mono); }
+
+  input[type=range] {
+    -webkit-appearance: none;
+    width: 100%;
+    height: 4px;
+    border-radius: 2px;
+    background: var(--bg3);
+    outline: none;
+    cursor: pointer;
+  }
+
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    background: var(--accent);
+    border: 3px solid var(--bg);
+    box-shadow: 0 0 0 1px var(--accent);
+    cursor: pointer;
+    transition: transform .15s;
+  }
+
+  input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.2); }
+
+  .risk-labels { display: flex; justify-content: space-between; font-size: 10px; color: var(--text3); font-family: var(--font-mono); }
+
+  /* ── GOALS ── */
+  .goals-wrap { display: flex; flex-wrap: wrap; gap: 6px; }
+
+  .goal-chip {
+    padding: 5px 12px;
+    border-radius: 20px;
+    border: 1px solid var(--border2);
+    font-size: 11px;
+    cursor: pointer;
+    background: transparent;
+    color: var(--text2);
+    font-family: var(--font-body);
+    transition: all .2s;
+  }
+
+  .goal-chip:hover { border-color: var(--accent); color: var(--text); }
+
+  .goal-chip.active {
+    background: rgba(79,142,247,0.12);
+    color: var(--accent);
+    border-color: rgba(79,142,247,0.35);
+  }
+
+  /* ── BUDGET ── */
+  .budget-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--card-radius);
+    padding: 14px;
+    font-size: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+  }
+
+  .budget-row { display: flex; justify-content: space-between; align-items: center; }
+  .budget-label { color: var(--text2); }
+  .budget-val { font-family: var(--font-mono); font-size: 11px; }
+  .budget-divider { border: none; border-top: 1px solid var(--border); margin: 2px 0; }
+  .budget-total { font-weight: 500; }
+
+  /* ── CONTENT ── */
+  .content { flex: 1; padding: 22px 24px; overflow-y: auto; }
+
+  .page { display: none; }
+  .page.active { display: block; }
+
+  /* ── METRIC GRID ── */
+  .metric-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 18px; }
+
+  .metric-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--card-radius);
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .metric-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    opacity: 0.6;
+  }
+
+  .metric-label { font-size: 11px; color: var(--text2); font-family: var(--font-mono); letter-spacing: .03em; }
+  .metric-val { font-size: 24px; font-weight: 500; font-family: var(--font-display); letter-spacing: -0.02em; line-height: 1.1; }
+  .metric-sub { font-size: 10px; color: var(--text3); margin-top: 2px; }
+
+  /* ── PORTFOLIO BAR ── */
+  .card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--card-radius);
+    padding: 18px;
+    margin-bottom: 14px;
+  }
+
+  .card-title { font-size: 13px; font-weight: 500; margin-bottom: 14px; color: var(--text); letter-spacing: .01em; }
+
+  .alloc-bar {
+    display: flex;
+    height: 32px;
+    border-radius: 8px;
+    overflow: hidden;
+    gap: 2px;
+  }
+
+  .seg {
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-family: var(--font-mono);
+    color: rgba(255,255,255,0.85);
+    font-weight: 500;
+    transition: width .6s cubic-bezier(.4,0,.2,1);
+    min-width: 0;
+    overflow: hidden;
+    border-radius: 4px;
+  }
+
+  .legend { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 12px; }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--text2);
+  }
+
+  .legend-dot {
+    width: 10px; height: 10px;
+    border-radius: 3px;
+    flex-shrink: 0;
+  }
+
+  /* ── GOAL PROGRESS ── */
+  .goal-row { margin-bottom: 14px; }
+  .goal-row:last-child { margin-bottom: 0; }
+  .goal-meta { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 6px; }
+  .goal-name { color: var(--text2); }
+  .goal-pct { font-family: var(--font-mono); font-size: 11px; font-weight: 500; }
+
+  .progress-track { height: 6px; background: var(--bg3); border-radius: 3px; overflow: hidden; }
+  .progress-fill { height: 100%; border-radius: 3px; transition: width .7s cubic-bezier(.4,0,.2,1); }
+
+  /* ── INSIGHTS ── */
+  .insight {
+    display: flex;
+    gap: 12px;
+    padding: 12px 14px;
+    border-radius: var(--radius);
+    border: 1px solid;
+    margin-bottom: 8px;
+    font-size: 13px;
+    line-height: 1.6;
+    align-items: flex-start;
+  }
+
+  .insight-icon { font-size: 15px; flex-shrink: 0; margin-top: 1px; }
+  .insight.info { background: rgba(79,142,247,0.07); border-color: rgba(79,142,247,0.18); color: var(--text); }
+  .insight.success { background: rgba(62,207,142,0.07); border-color: rgba(62,207,142,0.18); color: var(--text); }
+  .insight.warn { background: rgba(247,169,79,0.07); border-color: rgba(247,169,79,0.18); color: var(--text); }
+
+  /* ── SCENARIO PAGE ── */
+  .scenario-controls {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+
+  .sel {
+    padding: 8px 14px;
+    background: var(--bg2);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius);
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: 13px;
+    cursor: pointer;
+    outline: none;
+    flex: 1;
+    min-width: 200px;
+  }
+
+  .sel option { background: var(--bg2); }
+
+  .sim-btn {
+    padding: 8px 20px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border: none;
+    border-radius: var(--radius);
+    color: #fff;
+    font-size: 13px;
+    font-family: var(--font-body);
+    cursor: pointer;
+    font-weight: 500;
+    transition: opacity .2s, transform .15s;
+  }
+
+  .sim-btn:hover { opacity: 0.88; transform: translateY(-1px); }
+  .sim-btn:active { transform: translateY(0); }
+
+  /* ── AGENTS PAGE ── */
+  .agent-pipeline {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    padding: 20px 0;
+    overflow-x: auto;
+    margin-bottom: 18px;
+  }
+
+  .agent-node { display: flex; flex-direction: column; align-items: center; gap: 8px; min-width: 100px; }
+
+  .agent-orb {
+    width: 60px; height: 60px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    border: 1px solid var(--border2);
+    position: relative;
+    transition: border-color .3s, box-shadow .3s;
+  }
+
+  .agent-orb.active-agent {
+    border-color: var(--accent);
+    box-shadow: 0 0 20px rgba(79,142,247,0.25);
+  }
+
+  .agent-orb-status {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    position: absolute;
+    bottom: 3px; right: 3px;
+    border: 2px solid var(--bg);
+  }
+
+  .agent-label { font-size: 10px; color: var(--text2); text-align: center; font-family: var(--font-mono); }
+
+  .arrow { color: var(--text3); font-size: 16px; padding: 0 6px; margin-bottom: 20px; flex-shrink: 0; }
+
+  .agent-detail-grid { display: flex; flex-direction: column; gap: 10px; }
+
+  .agent-detail {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--card-radius);
+    padding: 16px;
+    display: flex;
+    gap: 14px;
+  }
+
+  .agent-detail-orb {
+    width: 44px; height: 44px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+    border: 1px solid var(--border2);
+  }
+
+  .agent-detail-body { flex: 1; }
+  .agent-detail-title { font-size: 13px; font-weight: 500; margin-bottom: 3px; }
+  .agent-detail-desc { font-size: 11px; color: var(--text2); line-height: 1.6; margin-bottom: 10px; }
+
+  .agent-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+
+  .agent-tag {
+    font-size: 10px;
+    font-family: var(--font-mono);
+    padding: 3px 9px;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    color: var(--text2);
+  }
+
+  /* ── CHAT PAGE ── */
+  .chat-wrap { display: flex; flex-direction: column; height: calc(100vh - 200px); min-height: 400px; }
+
+  .chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--card-radius) var(--card-radius) 0 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .chat-messages::-webkit-scrollbar { width: 4px; }
+  .chat-messages::-webkit-scrollbar-track { background: transparent; }
+  .chat-messages::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+  .chat-msg {
+    max-width: 80%;
+    padding: 10px 14px;
+    border-radius: 14px;
+    font-size: 13px;
+    line-height: 1.7;
+  }
+
+  .chat-msg.bot {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    align-self: flex-start;
+    color: var(--text);
+    border-radius: 4px 14px 14px 14px;
+  }
+
+  .chat-msg.user {
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: #fff;
+    align-self: flex-end;
+    border-radius: 14px 4px 14px 14px;
+  }
+
+  .bot-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 6px;
+    font-size: 10px;
+    color: var(--accent);
+    font-family: var(--font-mono);
+    letter-spacing: .04em;
+  }
+
+  .bot-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--green);
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse { 0%,100%{opacity:1}50%{opacity:.4} }
+
+  .typing-bubble { display: flex; gap: 5px; align-items: center; padding: 4px 0; }
+  .typing-bubble span {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--text2);
+    animation: blink .9s infinite;
+  }
+  .typing-bubble span:nth-child(2){animation-delay:.15s}
+  .typing-bubble span:nth-child(3){animation-delay:.3s}
+  @keyframes blink{0%,80%,100%{opacity:.2}40%{opacity:1}}
+
+  .chat-input-bar {
+    display: flex;
+    border: 1px solid var(--border2);
+    border-top: none;
+    border-radius: 0 0 var(--card-radius) var(--card-radius);
+    overflow: hidden;
+    background: var(--bg3);
+  }
+
+  .chat-input-bar input {
+    flex: 1;
+    border: none;
+    background: transparent;
+    padding: 13px 16px;
+    font-size: 13px;
+    color: var(--text);
+    font-family: var(--font-body);
+    outline: none;
+  }
+
+  .chat-input-bar input::placeholder { color: var(--text3); }
+
+  .chat-send {
+    padding: 13px 20px;
+    border: none;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: #fff;
+    font-size: 13px;
+    font-family: var(--font-body);
+    cursor: pointer;
+    font-weight: 500;
+    transition: opacity .2s;
+  }
+
+  .chat-send:hover { opacity: 0.85; }
+
+  .quick-btns {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 12px;
+  }
+
+  .quick-btn {
+    padding: 6px 13px;
+    border: 1px solid var(--border2);
+    border-radius: 20px;
+    font-size: 11px;
+    cursor: pointer;
+    background: var(--bg2);
+    color: var(--text2);
+    font-family: var(--font-body);
+    transition: all .2s;
+  }
+
+  .quick-btn:hover {
+    background: rgba(79,142,247,0.1);
+    border-color: rgba(79,142,247,0.3);
+    color: var(--accent);
+  }
+
+  /* ── SCROLLBARS ── */
+  .sidebar::-webkit-scrollbar, .content::-webkit-scrollbar { width: 4px; }
+  .sidebar::-webkit-scrollbar-track, .content::-webkit-scrollbar-track { background: transparent; }
+  .sidebar::-webkit-scrollbar-thumb, .content::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+  /* ── ANIMATIONS ── */
+  .fade-in { animation: fadeIn .4s ease forwards; }
+  @keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+
+  /* ── SCENARIO RESULT STATS ── */
+  .scen-stats { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; margin-bottom: 14px; }
+
+  /* ── RESPONSIVE ── */
+  @media(max-width:900px){
+    .sidebar{width:220px}
+    .metric-grid{grid-template-columns:1fr 1fr}
+    .scen-stats{grid-template-columns:1fr 1fr}
+  }
+
+  @media(max-width:680px){
+    .main{flex-direction:column}
+    .sidebar{width:100%;border-right:none;border-bottom:1px solid var(--border);flex-direction:row;flex-wrap:wrap}
+    .metric-grid{grid-template-columns:1fr}
+    .scen-stats{grid-template-columns:1fr}
+    .tabs{gap:2px}
+    .tab{padding:6px 10px;font-size:11px}
+    .content{padding:14px}
+  }
+
+  /* ── PROFILE EDIT MODAL ── */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.72);
+    z-index: 999;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(4px);
+  }
+  .modal-overlay.open { display: flex; }
+
+  .modal {
+    background: var(--bg2);
+    border: 1px solid var(--border2);
+    border-radius: 20px;
+    width: 520px;
+    max-width: 96vw;
+    max-height: 90vh;
+    overflow-y: auto;
+    animation: modalIn .25s cubic-bezier(.4,0,.2,1);
+  }
+  .modal::-webkit-scrollbar { width: 4px; }
+  .modal::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+  @keyframes modalIn { from{opacity:0;transform:translateY(20px) scale(.97)} to{opacity:1;transform:none} }
+
+  .modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 22px 16px;
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    background: var(--bg2);
+    border-radius: 20px 20px 0 0;
+    z-index: 2;
+  }
+
+  .modal-title {
+    font-family: var(--font-display);
+    font-size: 18px;
+    letter-spacing: -0.01em;
+  }
+
+  .modal-close {
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    border: 1px solid var(--border2);
+    background: transparent;
+    color: var(--text2);
+    font-size: 16px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all .2s;
+  }
+  .modal-close:hover { background: var(--bg3); color: var(--text); }
+
+  .modal-body { padding: 20px 22px; display: flex; flex-direction: column; gap: 20px; }
+
+  .modal-section-title {
+    font-size: 10px;
+    font-family: var(--font-mono);
+    color: var(--text3);
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .form-grid.full { grid-template-columns: 1fr; }
+
+  .form-field { display: flex; flex-direction: column; gap: 5px; }
+
+  .form-label {
+    font-size: 11px;
+    color: var(--text2);
+    font-family: var(--font-mono);
+    letter-spacing: .03em;
+  }
+
+  .form-input {
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius);
+    padding: 9px 12px;
+    font-size: 13px;
+    color: var(--text);
+    font-family: var(--font-body);
+    outline: none;
+    transition: border-color .2s;
+    width: 100%;
+  }
+  .form-input:focus { border-color: var(--accent); }
+  .form-input::placeholder { color: var(--text3); }
+
+  .form-input-prefix {
+    display: flex;
+    align-items: center;
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius);
+    overflow: hidden;
+    transition: border-color .2s;
+  }
+  .form-input-prefix:focus-within { border-color: var(--accent); }
+
+  .prefix-symbol {
+    padding: 9px 10px 9px 12px;
+    font-size: 13px;
+    color: var(--text2);
+    font-family: var(--font-mono);
+    background: var(--bg3);
+    flex-shrink: 0;
+  }
+
+  .prefix-input {
+    flex: 1;
+    border: none;
+    background: transparent;
+    padding: 9px 12px 9px 4px;
+    font-size: 13px;
+    color: var(--text);
+    font-family: var(--font-body);
+    outline: none;
+    min-width: 0;
+  }
+  .prefix-input::placeholder { color: var(--text3); }
+
+  .form-hint { font-size: 10px; color: var(--text3); font-family: var(--font-mono); }
+
+  .modal-footer {
+    padding: 16px 22px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    position: sticky;
+    bottom: 0;
+    background: var(--bg2);
+    border-radius: 0 0 20px 20px;
+  }
+
+  .btn-cancel {
+    padding: 9px 20px;
+    border: 1px solid var(--border2);
+    border-radius: var(--radius);
+    background: transparent;
+    color: var(--text2);
+    font-size: 13px;
+    font-family: var(--font-body);
+    cursor: pointer;
+    transition: all .2s;
+  }
+  .btn-cancel:hover { background: var(--bg3); color: var(--text); }
+
+  .btn-save {
+    padding: 9px 24px;
+    border: none;
+    border-radius: var(--radius);
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: #fff;
+    font-size: 13px;
+    font-family: var(--font-body);
+    font-weight: 500;
+    cursor: pointer;
+    transition: opacity .2s, transform .15s;
+  }
+  .btn-save:hover { opacity: .88; transform: translateY(-1px); }
+
+  .edit-profile-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 10px;
+    padding: 7px 12px;
+    border: 1px dashed var(--border2);
+    border-radius: var(--radius);
+    background: transparent;
+    color: var(--text2);
+    font-size: 11px;
+    font-family: var(--font-mono);
+    cursor: pointer;
+    width: 100%;
+    justify-content: center;
+    transition: all .2s;
+    letter-spacing: .03em;
+  }
+  .edit-profile-btn:hover { border-color: var(--accent); color: var(--accent); background: rgba(79,142,247,0.06); }
+
+  .save-toast {
+    position: fixed;
+    bottom: 28px;
+    left: 50%;
+    transform: translateX(-50%) translateY(60px);
+    background: var(--green);
+    color: #0d1a10;
+    padding: 10px 22px;
+    border-radius: 30px;
+    font-size: 13px;
+    font-weight: 500;
+    font-family: var(--font-body);
+    z-index: 9999;
+    transition: transform .3s cubic-bezier(.4,0,.2,1), opacity .3s;
+    opacity: 0;
+    pointer-events: none;
+  }
+  .save-toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="topbar-brand">
+      <div class="brand-icon">💡</div>
+      <span class="brand-name">FinAdvisor AI</span>
+      <span class="brand-tag">MULTI-AGENT</span>
+    </div>
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab('dashboard')">Dashboard</button>
+      <button class="tab" onclick="switchTab('scenario')">Scenarios</button>
+      <button class="tab" onclick="switchTab('agents')">Agents</button>
+      <button class="tab" onclick="switchTab('chat')">AI Chat</button>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main">
+
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+
+      <!-- Profile -->
+      <div class="sidebar-section">
+        <div class="section-label">Profile</div>
+        <div class="profile-card">
+          <div class="profile-header">
+            <div class="avatar" id="profile-avatar">AK</div>
+            <div>
+              <div class="profile-name" id="profile-name">Alex Kumar</div>
+              <div class="profile-sub" id="profile-sub">Age 34 · Software Engineer</div>
+            </div>
+          </div>
+          <div class="profile-stats">
+            <span class="label">Annual Income</span><span class="value" id="p-income" style="color:var(--green)">₹18L</span>
+            <span class="label">Savings</span><span class="value" id="p-savings">₹4.2L</span>
+            <span class="label">Debt</span><span class="value" id="p-debt">₹0</span>
+            <span class="label">Retire at</span><span class="value" id="p-retire">Age 60</span>
+          </div>
+        </div>
+        <button class="edit-profile-btn" onclick="openProfileModal()">✏ Edit financial profile</button>
+      </div>
+
+      <!-- Risk -->
+      <div class="sidebar-section">
+        <div class="section-label">Risk Tolerance</div>
+        <div class="risk-card">
+          <div class="risk-header">
+            <span id="risk-badge" class="risk-badge" style="background:rgba(247,169,79,0.15);color:var(--amber);border:1px solid rgba(247,169,79,0.3)">Medium</span>
+            <span id="risk-score" class="risk-score">5 / 10</span>
+          </div>
+          <input type="range" min="1" max="10" value="5" step="1" id="riskSlider" oninput="updateRisk(this.value)">
+          <div class="risk-labels"><span>Conservative</span><span>Aggressive</span></div>
+        </div>
+      </div>
+
+      <!-- Goals -->
+      <div class="sidebar-section">
+        <div class="section-label">Financial Goals</div>
+        <div class="goals-wrap" id="goals">
+          <button class="goal-chip active" onclick="toggleGoal(this)">Retirement</button>
+          <button class="goal-chip active" onclick="toggleGoal(this)">Home</button>
+          <button class="goal-chip" onclick="toggleGoal(this)">Education</button>
+          <button class="goal-chip" onclick="toggleGoal(this)">Emergency</button>
+          <button class="goal-chip" onclick="toggleGoal(this)">Travel</button>
+          <button class="goal-chip" onclick="toggleGoal(this)">Business</button>
+        </div>
+      </div>
+
+      <!-- Budget -->
+      <div class="sidebar-section">
+        <div class="section-label">Monthly Budget</div>
+        <div class="budget-card">
+          <div class="budget-row"><span class="budget-label">Income</span><span class="budget-val" id="b-income" style="color:var(--green)">+₹1,50,000</span></div>
+          <div class="budget-row"><span class="budget-label">Expenses</span><span class="budget-val" id="b-expenses" style="color:var(--red)">−₹75,000</span></div>
+          <div class="budget-row"><span class="budget-label">Investments</span><span class="budget-val" id="b-investments" style="color:var(--accent)">−₹40,000</span></div>
+          <hr class="budget-divider">
+          <div class="budget-row budget-total"><span>Free Cash</span><span class="budget-val" id="b-free">₹35,000</span></div>
+        </div>
+      </div>
+
+    </div><!-- end sidebar -->
+
+    <!-- CONTENT -->
+    <div class="content">
+
+      <!-- ── DASHBOARD ── -->
+      <div id="page-dashboard" class="page active">
+        <div class="metric-grid">
+          <div class="metric-card">
+            <div class="metric-label">Projected Corpus at 60</div>
+            <div class="metric-val" id="m-corpus">₹4.8Cr</div>
+            <div class="metric-sub">Based on current risk & SIP</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">Monthly SIP Needed</div>
+            <div class="metric-val" id="m-sip">₹42,000</div>
+            <div class="metric-sub">Start this month</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">Tax Saved (Est. FY)</div>
+            <div class="metric-val">₹1.2L</div>
+            <div class="metric-sub">Via ELSS + NPS</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Portfolio Allocation</div>
+          <div class="alloc-bar">
+            <div class="seg" id="seg-eq" style="width:60%;background:linear-gradient(135deg,#4f8ef7,#7c5af7)">60%</div>
+            <div class="seg" id="seg-debt" style="width:25%;background:linear-gradient(135deg,#3ecf8e,#2aaa72)">25%</div>
+            <div class="seg" id="seg-gold" style="width:8%;background:linear-gradient(135deg,#f7a94f,#e07020)">8%</div>
+            <div class="seg" id="seg-cash" style="width:7%;background:#545f72">7%</div>
+          </div>
+          <div class="legend">
+            <div class="legend-item"><div class="legend-dot" style="background:#4f8ef7"></div>Equity <strong id="l-eq" style="font-family:var(--font-mono);font-size:11px;margin-left:2px">60%</strong></div>
+            <div class="legend-item"><div class="legend-dot" style="background:#3ecf8e"></div>Debt <strong id="l-debt" style="font-family:var(--font-mono);font-size:11px;margin-left:2px">25%</strong></div>
+            <div class="legend-item"><div class="legend-dot" style="background:#f7a94f"></div>Gold <strong id="l-gold" style="font-family:var(--font-mono);font-size:11px;margin-left:2px">8%</strong></div>
+            <div class="legend-item"><div class="legend-dot" style="background:#545f72"></div>Cash <strong id="l-cash" style="font-family:var(--font-mono);font-size:11px;margin-left:2px">7%</strong></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Goal Progress Tracker</div>
+          <div id="goal-progress"></div>
+        </div>
+
+        <div>
+          <div class="card-title" style="margin-bottom:10px">AI Insights</div>
+          <div id="insights"></div>
+        </div>
+      </div>
+
+      <!-- ── SCENARIO ── -->
+      <div id="page-scenario" class="page">
+        <div class="scenario-controls">
+          <select class="sel" id="scenSelect" onchange="runScenario()">
+            <option value="base">Base Case — Steady income, avg returns</option>
+            <option value="bull">Bull Market — High returns (12%+)</option>
+            <option value="bear">Bear Market — Low returns (4%)</option>
+            <option value="jobless">Career Break — 2 years no income</option>
+            <option value="early">Early Retirement at 50</option>
+            <option value="windfall">Windfall — ₹50L inheritance</option>
+          </select>
+          <button class="sim-btn" onclick="runScenario()">▶ Simulate</button>
+        </div>
+
+        <div class="card">
+          <div class="card-title" id="scen-name" style="font-family:var(--font-display);font-size:18px;letter-spacing:-0.01em">Base Case</div>
+          <div style="font-size:12px;color:var(--text2);margin-bottom:14px;line-height:1.6" id="scen-desc">Steady 8% equity return with current savings rate. Inflation at 6%.</div>
+          <div class="scen-stats">
+            <div class="metric-card">
+              <div class="metric-label">Corpus at 60</div>
+              <div class="metric-val" id="s-corpus">₹4.8Cr</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-label">Monthly Retire Income</div>
+              <div class="metric-val" id="s-income">₹1.9L</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-label">Goal Achievability</div>
+              <div class="metric-val" id="s-achieve" style="color:var(--green)">87%</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Wealth Trajectory (₹ Lakhs over years)</div>
+          <div style="position:relative;height:220px"><canvas id="scenChart" role="img" aria-label="Scenario wealth projection chart over time"></canvas></div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Scenario Recommendations</div>
+          <div id="scen-insights"></div>
+        </div>
+      </div>
+
+      <!-- ── AGENTS ── -->
+      <div id="page-agents" class="page">
+        <div class="card-title" style="margin-bottom:14px;font-family:var(--font-display);font-size:20px;letter-spacing:-0.01em">Agent Architecture Pipeline</div>
+        <div class="agent-pipeline">
+          <div class="agent-node">
+            <div class="agent-orb active-agent" style="background:rgba(79,142,247,0.12)">📥<div class="agent-orb-status" style="background:var(--green)"></div></div>
+            <div class="agent-label">Input Agent</div>
+          </div>
+          <div class="arrow">→</div>
+          <div class="agent-node">
+            <div class="agent-orb" style="background:rgba(247,169,79,0.12)">⚖️<div class="agent-orb-status" style="background:var(--green)"></div></div>
+            <div class="agent-label">Risk Agent</div>
+          </div>
+          <div class="arrow">→</div>
+          <div class="agent-node">
+            <div class="agent-orb" style="background:rgba(62,207,142,0.12)">📈<div class="agent-orb-status" style="background:var(--green)"></div></div>
+            <div class="agent-label">Investment Agent</div>
+          </div>
+          <div class="arrow">→</div>
+          <div class="agent-node">
+            <div class="agent-orb" style="background:rgba(62,207,207,0.12)">🧾<div class="agent-orb-status" style="background:var(--green)"></div></div>
+            <div class="agent-label">Tax Agent</div>
+          </div>
+          <div class="arrow">→</div>
+          <div class="agent-node">
+            <div class="agent-orb" style="background:rgba(247,90,90,0.12)">🎯<div class="agent-orb-status" style="background:var(--green)"></div></div>
+            <div class="agent-label">Final Planner</div>
+          </div>
+        </div>
+
+        <div class="agent-detail-grid" id="agent-cards"></div>
+      </div>
+
+      <!-- ── CHAT ── -->
+      <div id="page-chat" class="page">
+        <div class="chat-wrap">
+          <div class="chat-messages" id="chat-msgs">
+            <div class="chat-msg bot">
+              <div class="bot-header"><div class="bot-dot"></div>FINADVISOR AI · ALL 5 AGENTS ACTIVE</div>
+              Hi Alex! I've analyzed your complete financial profile across all 5 agents. You're 74% on track for your ₹4.8Cr retirement target. I have several personalized tips ready. What would you like to explore?
+            </div>
+          </div>
+          <div class="chat-input-bar">
+            <input type="text" id="chatInput" placeholder="Ask about investments, tax savings, retirement planning..." onkeydown="if(event.key==='Enter')sendChat()">
+            <button class="chat-send" onclick="sendChat()">Send →</button>
+          </div>
+        </div>
+        <div class="quick-btns">
+          <button class="quick-btn" onclick="quickAsk('How much should I invest in equity?')">Equity allocation?</button>
+          <button class="quick-btn" onclick="quickAsk('Best tax saving options for me?')">Tax savings?</button>
+          <button class="quick-btn" onclick="quickAsk('Am I on track for retirement?')">Retirement check?</button>
+          <button class="quick-btn" onclick="quickAsk('Should I buy term insurance?')">Insurance advice?</button>
+          <button class="quick-btn" onclick="quickAsk('What if the market crashes 30%?')">Market crash?</button>
+          <button class="quick-btn" onclick="quickAsk('How to build an emergency fund?')">Emergency fund?</button>
+        </div>
+      </div>
+
+    </div><!-- end content -->
+  </div><!-- end main -->
+</div>
+
+<script>
+/* ──── STATE ──── */
+let riskLevel = 5;
+let activeGoals = ['Retirement', 'Home'];
+let scenarioChart = null;
+
+/* ──── RISK PROFILES ──── */
+const riskProfiles = {
+  low: {
+    eq:30, debt:50, gold:12, cash:8,
+    corpus:'₹3.1Cr', sip:'₹38,000',
+    label:'Conservative',
+    badgeBg:'rgba(62,207,142,0.15)', badgeColor:'var(--green)', badgeBorder:'rgba(62,207,142,0.3)'
+  },
+  medium: {
+    eq:60, debt:25, gold:8, cash:7,
+    corpus:'₹4.8Cr', sip:'₹42,000',
+    label:'Medium',
+    badgeBg:'rgba(247,169,79,0.15)', badgeColor:'var(--amber)', badgeBorder:'rgba(247,169,79,0.3)'
+  },
+  high: {
+    eq:80, debt:10, gold:5, cash:5,
+    corpus:'₹7.2Cr', sip:'₹48,000',
+    label:'Aggressive',
+    badgeBg:'rgba(247,90,90,0.15)', badgeColor:'var(--red)', badgeBorder:'rgba(247,90,90,0.3)'
+  }
+};
+
+/* ──── GOAL DATA ──── */
+const goalData = [
+  { name:'Retirement', pct:62, color:'#4f8ef7' },
+  { name:'Home',       pct:45, color:'#3ecf8e' },
+  { name:'Education',  pct:20, color:'#f7a94f' },
+  { name:'Emergency',  pct:80, color:'#f75ab0' },
+  { name:'Travel',     pct:35, color:'#7c5af7' },
+  { name:'Business',   pct:15, color:'#3ecfcf' }
+];
+
+/* ──── INSIGHTS ──── */
+const insightSets = {
+  low: [
+    { type:'success', icon:'✅', text:'Start a SIP of ₹38,000/month in a balanced advantage fund — safe and consistent.' },
+    { type:'info',    icon:'🏛️', text:'Maximize PPF contribution (₹1.5L/yr) for guaranteed, tax-free 7.1% returns.' },
+    { type:'warn',    icon:'🛡️', text:'Term insurance of ₹1.5Cr for 30 years is essential — costs only ₹12,000/yr.' }
+  ],
+  medium: [
+    { type:'info',    icon:'📊', text:'Increase equity SIP by ₹5,000/month to boost long-term corpus by ₹40L+.' },
+    { type:'success', icon:'💰', text:'ELSS investment of ₹1.5L saves ₹46,800 in taxes under Section 80C.' },
+    { type:'warn',    icon:'🧾', text:'Consider NPS Tier-1 for an additional ₹50,000 deduction under 80CCD(1B) — saves ₹15,600 more.' }
+  ],
+  high: [
+    { type:'info',    icon:'🚀', text:'Allocate 80% to equity: diversify across large-cap, mid-cap, and Nasdaq index funds.' },
+    { type:'success', icon:'📉', text:'Tax-loss harvesting opportunity in current portfolio — save ₹18,000 this FY.' },
+    { type:'warn',    icon:'⚠️', text:'High-growth strategy demands yearly insurance cover review — don\'t neglect protection.' }
+  ]
+};
+
+/* ──── AGENT INFO ──── */
+const agentInfo = [
+  {
+    icon:'📥', bg:'rgba(79,142,247,0.15)',
+    title:'Input Agent',
+    desc:'Parses income, savings, debts, age, and life stage. Normalizes and validates all financial data for downstream agents.',
+    tags:['Age: 34, Retire: 60','Income: ₹18L/yr','Savings rate: 26.7%','Debt: ₹0 (clean)','Life stage: Early accumulation']
+  },
+  {
+    icon:'⚖️', bg:'rgba(247,169,79,0.15)',
+    title:'Risk Agent',
+    desc:'Evaluates risk capacity vs risk preference. Computes volatility tolerance, downside buffer, and behavioral biases.',
+    tags:['Risk score: 5/10','Max drawdown: 20%','Equity range: 55–65%','Horizon: 26 years','Buffer: 6 months required']
+  },
+  {
+    icon:'📈', bg:'rgba(62,207,142,0.15)',
+    title:'Investment Agent',
+    desc:'Generates optimal portfolio allocation and SIP strategy based on goals, risk profile, and available instruments.',
+    tags:['SIP: ₹42,000/month','Large-cap: 35%, Mid: 15%','Debt MF: 25%, Gold: 8%','Expected CAGR: 10.2%','Rebalance: Annually']
+  },
+  {
+    icon:'🧾', bg:'rgba(62,207,207,0.15)',
+    title:'Tax Agent',
+    desc:'Identifies deductions, ELSS opportunities, capital gains optimization, and FY-end tax-saving strategies.',
+    tags:['80C: ₹1.5L via ELSS','80CCD(1B): ₹50K via NPS','HRA exemption: applicable','LTCG harvest: save ₹18K','New vs Old regime: New saves ₹22K more']
+  },
+  {
+    icon:'🎯', bg:'rgba(247,90,90,0.15)',
+    title:'Final Planner Agent',
+    desc:'Synthesizes all agent outputs into a unified financial plan with prioritized actions and confidence scoring.',
+    tags:['Plan confidence: 87%','Target corpus: ₹4.8Cr','Insurance gap: ₹80L','Action #1: Start ELSS SIP','Action #2: Open NPS account']
+  }
+];
+
+/* ──── SCENARIO DATA ──── */
+const scenData = {
+  base: {
+    name:'Base Case', desc:'Steady 8% equity return with current savings rate. Inflation assumed at 6%.',
+    corpus:'₹4.8Cr', income:'₹1.9L', achieve:'87%', achColor:'var(--green)',
+    data:[0,8,18,32,55,88,140],
+    insights:[
+      {type:'success',icon:'✅',text:'Stay consistent with ₹42,000/month SIP — do not pause even one month.'},
+      {type:'info',   icon:'📊',text:'Review and rebalance portfolio every 12 months if allocation drifts by 5%+.'},
+      {type:'warn',   icon:'🧾',text:'Start NPS now to unlock additional ₹50,000 tax deduction — 26 years of compounding.'}
+    ]
+  },
+  bull: {
+    name:'Bull Market', desc:'High return environment: 12%+ annualized equity gains. Excellent wealth creation window.',
+    corpus:'₹8.4Cr', income:'₹3.3L', achieve:'98%', achColor:'var(--green)',
+    data:[0,12,28,55,98,168,280],
+    insights:[
+      {type:'warn',   icon:'⚠️',text:'Bull markets tempt over-concentration — strictly maintain your asset allocation.'},
+      {type:'success',icon:'✅',text:'Book profits annually and reinvest in underweighted assets to preserve balance.'},
+      {type:'info',   icon:'🚀',text:'Excellent time to activate step-up SIP — increase by 15% this year.'}
+    ]
+  },
+  bear: {
+    name:'Bear Market', desc:'Low return environment: 4% equity CAGR. Inflation erodes real returns significantly.',
+    corpus:'₹2.9Cr', income:'₹1.1L', achieve:'61%', achColor:'var(--amber)',
+    data:[0,5,10,18,28,42,65],
+    insights:[
+      {type:'info',   icon:'💡',text:'Continue SIPs — rupee cost averaging reduces your average buy price during the dip.'},
+      {type:'warn',   icon:'🔄',text:'Move 10% from equity to short-duration debt funds as a temporary buffer.'},
+      {type:'success',icon:'💰',text:'Increase monthly savings by ₹10,000 to compensate for lower market returns.'}
+    ]
+  },
+  jobless: {
+    name:'Career Break', desc:'Two years of no income from age 36–38. Savings and SIPs resume after re-employment.',
+    corpus:'₹3.8Cr', income:'₹1.5L', achieve:'74%', achColor:'var(--amber)',
+    data:[0,8,16,16,28,52,98],
+    insights:[
+      {type:'warn',   icon:'🏦',text:'Build a 12-month emergency fund before the career break — non-negotiable.'},
+      {type:'info',   icon:'📊',text:'Pause SIPs during break; keep existing investments untouched — compounding continues.'},
+      {type:'success',icon:'🛡️',text:'Purchase individual health insurance before break — budget ₹25,000/yr for family cover.'}
+    ]
+  },
+  early: {
+    name:'Early Retirement at 50', desc:'Retire 10 years earlier. Requires a much larger corpus and higher savings intensity.',
+    corpus:'₹2.6Cr', income:'₹1.0L', achieve:'55%', achColor:'var(--red)',
+    data:[0,10,22,38,58,58,58],
+    insights:[
+      {type:'warn',   icon:'⚠️',text:'Target corpus of ₹5Cr at 50 — current trajectory delivers ₹2.6Cr. Gap: ₹2.4Cr.'},
+      {type:'info',   icon:'📈',text:'Increase SIP to ₹75,000/month to close the gap — aggressive but achievable with discipline.'},
+      {type:'success',icon:'💡',text:'Shift to dividend-yield assets 3 years before retirement to generate monthly passive income.'}
+    ]
+  },
+  windfall: {
+    name:'Windfall — ₹50L Inheritance', desc:'₹50L received at age 40. Deployed strategically across equity and debt instruments.',
+    corpus:'₹9.1Cr', income:'₹3.6L', achieve:'99%', achColor:'var(--green)',
+    data:[0,8,18,85,130,200,320],
+    insights:[
+      {type:'info',   icon:'💡',text:'Deploy ₹50L via STPs over 12 months — invest 60% in equity, 40% in debt. Avoid lump-sum timing risk.'},
+      {type:'success',icon:'🏠',text:'Use ₹15L to prepay housing loan or build down-payment — guaranteed 8%+ effective return.'},
+      {type:'warn',   icon:'🎯',text:'Windfall brings you to financial independence 5 years ahead of plan — review insurance & estate planning.'}
+    ]
+  }
+};
+
+/* ──── RISK HELPERS ──── */
+function getRiskKey() {
+  return riskLevel <= 3 ? 'low' : riskLevel <= 7 ? 'medium' : 'high';
+}
+
+function updateRisk(v) {
+  riskLevel = parseInt(v);
+  const k = getRiskKey();
+  const p = riskProfiles[k];
+
+  document.getElementById('risk-score').textContent = v + ' / 10';
+  const badge = document.getElementById('risk-badge');
+  badge.textContent = p.label;
+  badge.style.background = p.badgeBg;
+  badge.style.color = p.badgeColor;
+  badge.style.border = '1px solid ' + p.badgeBorder;
+
+  document.getElementById('m-corpus').textContent = p.corpus;
+  document.getElementById('m-sip').textContent = p.sip;
+
+  const segs = { eq: p.eq, debt: p.debt, gold: p.gold, cash: p.cash };
+  Object.entries(segs).forEach(([id, val]) => {
+    const el = document.getElementById('seg-' + id);
+    el.style.width = val + '%';
+    el.textContent = val + '%';
+    document.getElementById('l-' + id).textContent = val + '%';
+  });
+
+  renderInsights();
+}
+
+/* ──── TOGGLE GOAL ──── */
+function toggleGoal(el) {
+  el.classList.toggle('active');
+  const g = el.textContent.trim();
+  if (el.classList.contains('active')) {
+    if (!activeGoals.includes(g)) activeGoals.push(g);
+  } else {
+    activeGoals = activeGoals.filter(x => x !== g);
+  }
+  renderGoalProgress();
+}
+
+/* ──── RENDER GOAL PROGRESS ──── */
+function renderGoalProgress() {
+  const container = document.getElementById('goal-progress');
+  const active = goalData.filter(g => activeGoals.includes(g.name));
+  if (active.length === 0) {
+    container.innerHTML = '<div style="color:var(--text3);font-size:13px;text-align:center;padding:16px">Select goals above to track progress</div>';
+    return;
+  }
+  container.innerHTML = active.map(g => `
+    <div class="goal-row">
+      <div class="goal-meta">
+        <span class="goal-name">${g.name}</span>
+        <span class="goal-pct" style="color:${g.color}">${g.pct}%</span>
+      </div>
+      <div class="progress-track">
+        <div class="progress-fill" style="width:${g.pct}%;background:${g.color}"></div>
+      </div>
+    </div>`).join('');
+}
+
+/* ──── RENDER INSIGHTS ──── */
+function renderInsights(containerId = 'insights', key = null) {
+  const k = key || getRiskKey();
+  const ins = insightSets[k];
+  const container = document.getElementById(containerId);
+  container.innerHTML = ins.map(i => `
+    <div class="insight ${i.type}">
+      <span class="insight-icon">${i.icon}</span>
+      <span>${i.text}</span>
+    </div>`).join('');
+}
+
+/* ──── RENDER AGENT CARDS ──── */
+function renderAgentCards() {
+  document.getElementById('agent-cards').innerHTML = agentInfo.map(a => `
+    <div class="agent-detail fade-in">
+      <div class="agent-detail-orb" style="background:${a.bg}">${a.icon}</div>
+      <div class="agent-detail-body">
+        <div class="agent-detail-title">${a.title}</div>
+        <div class="agent-detail-desc">${a.desc}</div>
+        <div class="agent-tags">${a.tags.map(t => `<span class="agent-tag">${t}</span>`).join('')}</div>
+      </div>
+    </div>`).join('');
+}
+
+/* ──── SCENARIO ──── */
+function runScenario() {
+  const k = document.getElementById('scenSelect').value;
+  const s = scenData[k];
+
+  document.getElementById('scen-name').textContent = s.name;
+  document.getElementById('scen-desc').textContent = s.desc;
+  document.getElementById('s-corpus').textContent = s.corpus;
+  document.getElementById('s-income').textContent = s.income;
+  document.getElementById('s-achieve').textContent = s.achieve;
+  document.getElementById('s-achieve').style.color = s.achColor;
+
+  document.getElementById('scen-insights').innerHTML = s.insights.map(i => `
+    <div class="insight ${i.type}">
+      <span class="insight-icon">${i.icon}</span>
+      <span>${i.text}</span>
+    </div>`).join('');
+
+  const labels = ['Now','5yr','10yr','15yr','20yr','25yr','26yr'];
+  const chartData = s.data.map(v => v * 10);
+
+  if (scenarioChart) { scenarioChart.destroy(); }
+
+  const isDark = true;
+  scenarioChart = new Chart(document.getElementById('scenChart'), {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Wealth (₹L)',
+        data: chartData,
+        borderColor: '#4f8ef7',
+        backgroundColor: (ctx) => {
+          const g = ctx.chart.ctx.createLinearGradient(0, 0, 0, 220);
+          g.addColorStop(0, 'rgba(79,142,247,0.2)');
+          g.addColorStop(1, 'rgba(79,142,247,0)');
+          return g;
+        },
+        fill: true,
+        tension: 0.45,
+        pointRadius: 5,
+        pointBackgroundColor: '#4f8ef7',
+        pointBorderColor: '#0d0f14',
+        pointBorderWidth: 2,
+        borderWidth: 2.5
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: ctx => '₹' + Math.round(ctx.parsed.y) + 'L'
+          }
+        }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          grid: { color: 'rgba(255,255,255,0.05)' },
+          ticks: {
+            color: '#8892a4',
+            font: { size: 11, family: 'DM Mono' },
+            callback: v => '₹' + Math.round(v) + 'L'
+          }
+        },
+        x: {
+          grid: { display: false },
+          ticks: { color: '#8892a4', font: { size: 11, family: 'DM Mono' } }
+        }
+      }
+    }
+  });
+}
+
+/* ──── TAB SWITCHING ──── */
+function switchTab(t) {
+  const names = ['dashboard','scenario','agents','chat'];
+  document.querySelectorAll('.tab').forEach((el, i) => el.classList.toggle('active', names[i] === t));
+  document.querySelectorAll('.page').forEach(el => el.classList.remove('active'));
+  document.getElementById('page-' + t).classList.add('active');
+  if (t === 'scenario') setTimeout(runScenario, 80);
+  if (t === 'agents') renderAgentCards();
+}
+
+/* ──── CHATBOT ──── */
+const botResponses = {
+  equity: [
+    'Based on your medium risk profile and 26-year horizon, I recommend: 35% large-cap index (Nifty 50), 15% mid-cap, 10% international (S&P 500/NASDAQ index fund), 25% debt MFs, 8% Sovereign Gold Bonds, 7% liquid fund. This optimally balances growth with stability.'
+  ],
+  tax: [
+    'Your tax-saving opportunities this FY:\n1. Section 80C — ₹1.5L via ELSS → saves ₹46,800\n2. 80CCD(1B) — ₹50,000 via NPS → saves ₹15,600\n3. HRA exemption — applicable on rent paid\n4. LTCG tax-loss harvesting → saves ₹18,000\nTotal potential saving: ₹80,400. Want me to create a month-by-month action plan?'
+  ],
+  retirement: [
+    "You're 74% on track for your ₹4.8Cr retirement corpus! Current trajectory delivers ₹3.6Cr by age 60. The ₹1.2Cr gap can be closed by: (A) Increasing SIP by ₹8,000/month — doable with your ₹35K free cash, or (B) Annual step-up of 10% on your existing SIP. You have 26 years — time is your most powerful asset!"
+  ],
+  insurance: [
+    'Insurance gap analysis for your profile:\n• Life: You need ₹1.5Cr term plan (30yr). Cost: ~₹12,000/yr at age 34. Current cover: ₹0 — critical gap!\n• Health: ₹10L family floater. Cost: ~₹18,000/yr.\n• Critical Illness: Optional but recommended.\nTotal insurance budget: ₹30,000/yr. This is non-negotiable protection.'
+  ],
+  crash: [
+    "If markets fall 30%, here's what happens to your portfolio:\n• Equity portion (₹2.52L of ₹4.2L) drops to ₹1.76L temporarily.\n• Total drops from ₹4.2L to ~₹3.4L.\n\nBut: (1) Your SIPs now buy MORE units at lower prices — rupee cost averaging kicks in. (2) 40% is in debt/gold — a natural buffer. (3) All major crashes have recovered fully within 3–5 years. Action: Continue SIPs, don't panic-sell."
+  ],
+  emergency: [
+    "Emergency fund formula for you: 6 × monthly expenses = 6 × ₹75,000 = ₹4.5L target. You currently have ₹4.2L saved — you're very close! Recommended parking: ₹2.5L in liquid mutual fund (e.g. HDFC Liquid Fund, instant redemption) + ₹2L in high-yield savings account. Target: ₹4.5L within 3 months by redirecting ₹10,000/month."
+  ],
+  default: [
+    "Great question! Based on your profile — age 34, ₹18L income, medium risk, zero debt — I'd suggest focusing on: (1) Consistent SIP of ₹42,000/month, (2) Tax optimization via ELSS + NPS saving ₹62K/yr, (3) Term insurance of ₹1.5Cr. Which area should we deep-dive into?",
+    "I've analyzed your data across all 5 agents. Your biggest untapped opportunity is tax savings — you're leaving ₹62,000 on the table this FY. Want a step-by-step implementation plan?",
+    "Your financial health score: 72/100. Strengths: Zero debt, 26.7% savings rate. Gaps: No term insurance, no international diversification, no NPS account. Let's fix the insurance gap first — it's the most critical."
+  ]
+};
+
+function getResponse(msg) {
+  const m = msg.toLowerCase();
+  if (m.includes('equity') || m.includes('stock') || m.includes('allocation')) return botResponses.equity[0];
+  if (m.includes('tax') || m.includes('elss') || m.includes('nps') || m.includes('80c')) return botResponses.tax[0];
+  if (m.includes('retire')) return botResponses.retirement[0];
+  if (m.includes('insurance') || m.includes('term') || m.includes('cover')) return botResponses.insurance[0];
+  if (m.includes('crash') || m.includes('market') || m.includes('fall') || m.includes('down')) return botResponses.crash[0];
+  if (m.includes('emergency') || m.includes('fund') || m.includes('liquid')) return botResponses.emergency[0];
+  const d = botResponses.default;
+  return d[Math.floor(Math.random() * d.length)];
+}
+
+function addMsg(text, role) {
+  const el = document.createElement('div');
+  el.className = 'chat-msg ' + role;
+  if (role === 'bot') {
+    el.innerHTML = `<div class="bot-header"><div class="bot-dot"></div>FINADVISOR AI</div>${text.replace(/\n/g,'<br>')}`;
+  } else {
+    el.textContent = text;
+  }
+  document.getElementById('chat-msgs').appendChild(el);
+  document.getElementById('chat-msgs').scrollTop = 99999;
+}
+
+function sendChat() {
+  const inp = document.getElementById('chatInput');
+  const msg = inp.value.trim();
+  if (!msg) return;
+  addMsg(msg, 'user');
+  inp.value = '';
+
+  const typing = document.createElement('div');
+  typing.className = 'chat-msg bot';
+  typing.innerHTML = '<div class="bot-header"><div class="bot-dot"></div>THINKING...</div><div class="typing-bubble"><span></span><span></span><span></span></div>';
+  document.getElementById('chat-msgs').appendChild(typing);
+  document.getElementById('chat-msgs').scrollTop = 99999;
+
+  setTimeout(() => {
+    typing.remove();
+    addMsg(getResponse(msg), 'bot');
+  }, 1300);
+}
+
+function quickAsk(q) {
+  switchTab('chat');
+  setTimeout(() => {
+    document.getElementById('chatInput').value = q;
+    sendChat();
+  }, 150);
+}
+
+/* ──── INIT ──── */
+renderGoalProgress();
+renderInsights();
+</script>
+</body>
+</html>
